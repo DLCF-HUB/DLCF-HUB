@@ -1,0 +1,10 @@
+import {database} from './database';
+import {getUser} from './auth';
+import {permissions} from './access';
+export function db(){return database;}
+export async function all(sql:string,...args:unknown[]){return (await db().prepare(sql).bind(...args).all()).results as any[];}
+export async function identity(campus:string){const user=await getUser();if(!user)throw new Error('Sign in to continue.');const grant=await db().prepare('SELECT role FROM grants WHERE email=$1 AND campus=$2').bind(user.email.toLowerCase(),campus).first<{role:string}>();const isOwner=user.isOwner;const member=await db().prepare('SELECT * FROM members WHERE campus=$1 AND (user_id=$2 OR email=$3)').bind(campus,user.userId,user.email.toLowerCase()).first<any>();return {user,role:isOwner?'Platform Administrator':grant?.role||'Member',permissions:permissions(isOwner?'Platform Administrator':grant?.role||'Member'),member};}
+export async function auditStatement(campus:string,action:string,recordId:string,author:string){return db().prepare('INSERT INTO audit(id,campus,action,record_id,author,created_at) VALUES($1,$2,$3,$4,$5,$6)').bind(crypto.randomUUID(),campus,action,recordId,author,new Date().toISOString());}
+export function textValue(v:unknown,max=500){if(typeof v!=='string')return '';return v.trim().slice(0,max);}
+export function numberValue(v:unknown,max=1000000000){const n=Number(v);if(!Number.isSafeInteger(n)||n<0||n>max)throw new Error('Enter a valid whole number.');return n;}
+export function fail(error:unknown){console.error('Fellowship request failed',error instanceof Error?error.message:'Unknown');let message=error instanceof Error?error.message:'Unable to save. Please try again.';if(/UNIQUE constraint|duplicate key/i.test(message))message='A matching record already exists. Duplicate entries are not allowed.';else if(/SQLITE|D1_ERROR|constraint|relation .* does not exist|connect|ECONN/i.test(message))message='Unable to save this record. Please check your entries.';return Response.json({error:message},{status:/Sign in/.test(message)?401:/permission|access/i.test(message)?403:400});}

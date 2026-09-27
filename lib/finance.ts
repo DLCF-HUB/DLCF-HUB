@@ -1,0 +1,2 @@
+type Row=Record<string,any>;
+export function Balance(list:Row[]){let cash=0,bank=0,income=0,expense=0;for(const t of list){const n=t.amount;if(t.type==='Cash to bank'){cash-=n;bank+=n;}else if(t.type==='Bank to cash'){bank-=n;cash+=n;}else{const change=t.type==='Expense'?-n:n;if(t.account==='Cash')cash+=change;else bank+=change;if(t.type==='Income')income+=n;if(t.type==='Expense')expense+=n;}}return {cash,bank,income,expense};}
