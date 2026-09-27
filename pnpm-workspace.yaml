@@ -1,0 +1,9 @@
+minimumReleaseAge: 10080
+minimumReleaseAgeIgnoreMissingTime: false
+trustLockfile: false
+strictDepBuilds: true
+allowBuilds:
+  sharp: true
+  unrs-resolver: true
+# CI and deployment run the explicit frozen install step.
+verifyDepsBeforeRun: false
